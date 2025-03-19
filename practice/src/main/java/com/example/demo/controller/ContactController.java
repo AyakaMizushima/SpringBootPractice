@@ -12,15 +12,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
-import com.example.demo.entity.Contact;
 import com.example.demo.form.ContactForm;
-import com.example.demo.repository.ContactRepository;
+import com.example.demo.service.ContactService;
 
 @Controller
 public class ContactController {
-	
 	@Autowired
-	private ContactRepository contactRepository;
+	private ContactService contactService;
 	
 	@GetMapping("/contact")
 	public String contact(Model model) {
@@ -31,9 +29,8 @@ public class ContactController {
 	
 	@PostMapping("/contact")
 	public String contact(@Validated @ModelAttribute("contactForm") ContactForm contactForm, BindingResult errorResult, HttpServletRequest request) {
-		
 		if (errorResult.hasErrors()) {
-			return "contact";
+		return "contact";
 		}
 		
 		HttpSession session = request.getSession();
@@ -41,14 +38,13 @@ public class ContactController {
 		
 		return "redirect:/contact/confirm";
 	}
-
+	
 	@GetMapping("/contact/confirm")
 	public String confirm(Model model, HttpServletRequest request) {
 		HttpSession session = request.getSession();
 		
 		ContactForm contactForm = (ContactForm) session.getAttribute("contactForm");
 		model.addAttribute("contactForm", contactForm);
-		
 		return "confirmation";
 	}
 	
@@ -58,18 +54,7 @@ public class ContactController {
 		HttpSession session = request.getSession();
 		ContactForm contactForm = (ContactForm) session.getAttribute("contactForm");
 		
-		Contact contact = new Contact();
-		contact.setLastName(contactForm.getLastName());
-		contact.setFirstName(contactForm.getFirstName());
-		contact.setEmail(contactForm.getEmail());
-		contact.setPhone(contactForm.getPhone());
-		contact.setZipCode(contactForm.getZipCode());
-		contact.setAddress(contactForm.getAddress());
-		contact.setBuildingName(contactForm.getBuildingName());
-		contact.setContactType(contactForm.getContactType());
-		contact.setBody(contactForm.getBody());
-		
-		contactRepository.save(contact);
+		contactService.saveContact(contactForm);
 		
 		return "redirect:/contact/complete";
 	}
@@ -78,7 +63,7 @@ public class ContactController {
 	public String complete(Model model, HttpServletRequest request) {
 	
 		if (request.getSession(false) == null) {
-		  return "redirect:/contact";
+			return "redirect:/contact";
 		}
 		
 		HttpSession session = request.getSession();
@@ -89,5 +74,4 @@ public class ContactController {
 		
 		return "completion";
 	}
-
 }

@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.sql.Timestamp;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import com.example.demo.form.ContactForm;
 import com.example.demo.service.ContactService;
+
 
 @Controller
 public class ContactController {
@@ -53,6 +56,9 @@ public class ContactController {
 	
 		HttpSession session = request.getSession();
 		ContactForm contactForm = (ContactForm) session.getAttribute("contactForm");
+		
+		contactForm.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+		contactForm.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
 		
 		contactService.saveContact(contactForm);
 		

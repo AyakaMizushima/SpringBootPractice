@@ -5,12 +5,14 @@ import java.util.List;
 import java.util.Optional;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.demo.entity.AdminSignup;
 import com.example.demo.entity.Contact;
+import com.example.demo.form.ContactForm;
 import com.example.demo.form.LoginForm;
 import com.example.demo.repository.AdminSignupRepository;
 import com.example.demo.repository.ContactRepository;
@@ -34,7 +37,15 @@ public class AdminController {
 		return "admin/signup";
 	}
 	@PostMapping("/signup/confirm")
-	public String confirmSignup(@ModelAttribute ("ContactForm") AdminSignup contactForm, Model model) {
+	public String confirmSignup(
+		@ModelAttribute("contactForm") @Valid AdminSignup contactForm,
+		BindingResult bindingResult,
+		Model model
+	) {
+		if (bindingResult.hasErrors()) {
+			return "admin/signup";
+		}
+
 		model.addAttribute("contactForm", contactForm);
 		return "admin/signup_confirmation";
 	}
@@ -89,38 +100,59 @@ public class AdminController {
 	public String showEditForm(@PathVariable Long id, Model model, HttpServletRequest request) {
 		Optional<Contact> contactOpt = contactRepository.findById(id);
 		if (contactOpt.isPresent()) {
-			model.addAttribute("contact", contactOpt.get());
-			
+			Contact contact = contactOpt.get();
+
+			ContactForm form = new ContactForm();
+			form.setId(contact.getId());
+			form.setFirstName(contact.getFirstName());
+			form.setLastName(contact.getLastName());
+			form.setEmail(contact.getEmail());
+			form.setPhone(contact.getPhone());
+			form.setZipCode(contact.getZipCode());
+			form.setAddress(contact.getAddress());
+			form.setBuildingName(contact.getBuildingName());
+			form.setContactType(contact.getContactType());
+			form.setBody(contact.getBody());
+
+			model.addAttribute("contact", form);
+
 			CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
 			model.addAttribute("_csrf", csrfToken);
-			
+
 			return "admin/contact_edit";
 		} else {
 			return "redirect:/admin/contacts_list";
 		}
 	}
 	@PostMapping("/contacts/update")
-	public String updateContact(@ModelAttribute Contact contact) {
-		Optional<Contact> existingOpt = contactRepository.findById(contact.getId());
+	public String updateContact(
+		@ModelAttribute("contact") @Valid ContactForm contactForm,
+		BindingResult bindingResult,
+		Model model
+	) {
+		if (bindingResult.hasErrors()) {
+			model.addAttribute("contact", contactForm);
+			return "admin/contact_edit";
+		}
 
+		Optional<Contact> existingOpt = contactRepository.findById(contactForm.getId());
 		if (existingOpt.isPresent()) {
 			Contact existing = existingOpt.get();
 
-			existing.setFirstName(contact.getFirstName());
-			existing.setLastName(contact.getLastName());
-			existing.setEmail(contact.getEmail());
-			existing.setPhone(contact.getPhone());
-			existing.setZipCode(contact.getZipCode());
-			existing.setAddress(contact.getAddress());
-			existing.setBuildingName(contact.getBuildingName());
-			existing.setContactType(contact.getContactType());
-			existing.setBody(contact.getBody());
-
+			existing.setFirstName(contactForm.getFirstName());
+			existing.setLastName(contactForm.getLastName());
+			existing.setEmail(contactForm.getEmail());
+			existing.setPhone(contactForm.getPhone());
+			existing.setZipCode(contactForm.getZipCode());
+			existing.setAddress(contactForm.getAddress());
+			existing.setBuildingName(contactForm.getBuildingName());
+			existing.setContactType(contactForm.getContactType());
+			existing.setBody(contactForm.getBody());
 			existing.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
 
 			contactRepository.saveAndFlush(existing);
 		}
-		return "redirect:/admin/contacts/" + contact.getId();
+		return "redirect:/admin/contacts/" + contactForm.getId();
 	}
 	@PostMapping("/contacts/delete")
 	public String deleteContact(@RequestParam("id") Long id) {

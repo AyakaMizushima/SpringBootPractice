@@ -53,4 +53,6 @@ public class ContactForm implements Serializable {
 	public void setUpdatedAt(Timestamp updatedAt) {
 		this.updatedAt = updatedAt;
 	}
+	
+	private Long id;
 }
